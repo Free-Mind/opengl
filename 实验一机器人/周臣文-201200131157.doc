@@ -1,0 +1,222 @@
+﻿基于光栅图形显示器、鼠标的直线、圆弧生成算法调试和实现
+
+(一)实验环境:
+	1.操作系统:Ubuntu 14.10
+	2.编程环境:opengl库,g++编译器,gedit编辑器
+
+(二)实验目的:
+	1. 掌握在VC环境中如何配置OpenGL环境的方法。
+	2. 熟悉OpenGL应用程序基础架构。
+	3. 简单OpenGL程序的建立、调试与运行。
+	4. 培养良好的编程习惯和风格，学习撰写实验报告。
+
+(三)试验内容
+	1.实现直线的DDA算法,正负法,Bresenham算法和画圆弧的正负法和bresenham算法;
+	2.利用上述算法绘制一个机器人(参考如下)
+
+(四)部分源码:
+	dda算法:
+	void dda(int x1,int y1,int x2,int y2){
+	int k,i;
+	float x,y,dx,dy;
+	k=abs(x2-x1);
+	//k为较大的值
+	if(abs(y2-y1)>k)
+		k =abs(y2-y1);
+	//得出x,y的平均增长值dx,dy
+	dx = float(x2-x1)/k;
+	dy = float(y2-y1)/k;
+	x = float(x1);
+	y = float(y1);
+	glClear(GL_COLOR_BUFFER_BIT);  
+	glPointSize(1.0f);  
+	glBegin(GL_POINTS);
+	for(i=0;i<k;i++){
+		int xp = int(x+0.5);
+		int yp = int(y+0.5);  
+		glVertex2f(xp, yp);     
+		x = x+dx;
+		y = y+dy; 
+	} 
+	glEnd();  
+	glFlush();
+}
+介绍一下opengl的相关函数:
+glclear():清除窗口里面所有的颜色,即初始化窗口;
+glPointSize();画点时点的大小;
+glBegin(GL_POINTS);把每一个顶点作为一个点进行处理
+glEnd():绘图结束函数(所有的绘图函数均在begin和end函数之间完成)
+glVertex2f();给出坐标,画点
+glflush():	强制刷新缓冲保证绘图命令被执行.
+
+Bresenham算法(画直线):
+	书上的bresenham算法只描述了直线斜率在(0,1)之间的情况,我们需要扩展斜率在(-~,-1);(-1,0),(1,+~)三种情况.
+	bresenham算法的主要思想是判断直线上面的点距离哪一个可显示的像素点更近,使用最近的像素点描述该直线上对应的点.以斜率k>1的情况解释.
+当斜率k>1的时候,y方向上的增值会快于x方向上面的增值,所以,此时我们分析问题应该从Y轴入手,即:每次循环y必然加1;判断e的大小,决定x是否加1.(跟竖向的k<1的情况刚好相反)
+代码如下(k>1):
+				m=(double)dy/(double)dx;
+				m=(double)1/m;
+				double e=m-0.5;
+				for(int i=0;i<dy;i++){
+					glVertex2f(x,y);
+					if(e>=0){
+						x=x+1;
+						e=e-1;
+					}
+					y=y+1;
+					e=e+m;
+				}
+-1<k<0:
+			double e=m-0.5;
+			for(int i=0;i<dx;i++){
+				glVertex2f(x,y);
+				if(e>=0){
+					y=y-1;
+					e=e-1;
+				}
+				x=x+1;
+				e=e-m;
+			}
+当斜率小于0的时候,m为负值.这时候,我们需要注意的是e的变化.
+e表示的意思是:如果e>0,说明两个像素点的中点(垂直方向上的中点)在直线的下方,那么,这时候应该使用y值较大的那个像素点来表示直线上对应的点;
+同理,当e<0,应该使用y值较小的像素点表示直线上的点.
+e在每次循环都得增加一个m值,这里m小于0,所以e=e-m.
+
+K<-1:
+m=(double)1/m;
+			double e=m-0.5;
+			for(int i=0;i<(-dy);i++){
+				glVertex2f(x,y);
+				if(e>=0){
+					x=x+1;
+					e=e-1;
+				}
+				y=y-1;
+				e=e-m;
+			}
+正负法(画直线):
+书上也是仅仅给出了直线斜率k在0到1之间的情况.我们需要讨论其他三种情况.正负法的思想和bresenham算法的思想大致相同.也是通过判断两个像素点的中点在直线的上面还是下面来判断使用哪个点来表示直线.
+部分代码(k>1)
+			d=a+2*b;
+			dt1=2*b;
+			dt2=2*(a+b);
+			x=xs;
+			y=ys;
+			glVertex2f(x,y);
+			while(y<ye){
+				if(d<0){
+					y++;
+					d=d+dt1;
+				}
+				else{
+					y++;
+					x++;
+					d=d+dt2;
+				}
+				glVertex2f(x, y);    
+			}
+
+正负法画圆弧:
+使用正负法画出来的圆弧是四分之一圆弧.书上的例子之给出了第一象限的圆弧画法,通过对称我们可以画出其余三个象限的圆弧.
+主要的思想:
+通过圆的方程,F(x,y)=x^2+y^2-R^2=0 我们可以得出如下结论:当点P(x,y)在圆内,F<0;当点p在圆外,F>0;当p在圆上,F=0.
+当p点在圆内时,F<0;此时向右边走一步,得到Q;当p在圆外,F>0;此时向下走一步.
+所以这样表示的点均在圆弧的附近.
+代码:
+int x,y,f;
+	f=0;
+	x=0;
+	y=0+radius;
+	while(y>0){
+		switch(situation){
+//表示圆弧在四个象限的情况.是通过对称得到的
+			case 1:
+				glVertex2f(x+rx,y+ry);
+				break;
+			case 2:
+				glVertex2f(rx-x,y+ry);
+				break;
+			case 3:
+				glVertex2f(rx-x,ry-y);
+				break;
+			case 4:
+				glVertex2f(x+rx,ry-y);
+				break;
+		}
+		if(f>0)
+		{
+			f=f-2*y+1;
+			y=y-1;
+		}	
+		else{
+			f=f+2*x+1;
+			x=x+1;
+		}
+	}
+	if(y==0){
+		switch(situation){
+			case 1:
+				glVertex2f(x+rx,y+ry);
+				break;
+			case 2:
+				glVertex2f(rx-x,y+ry);
+				break;
+			case 3:
+				glVertex2f(rx-x,ry-y);
+				break;
+			case 4:
+				glVertex2f(x+rx,ry-y);
+				break;
+		}
+	}
+bresenham算法画圆弧:
+通过bresenham算法画出的圆弧是八分之一圆弧.实现如下:
+int x,y,d;
+	x=0;
+	y=r;
+	d=3-2*r;
+	while(x<y){
+//draw()实现绘图.分为种情况,主要通过对称实现其他种情况
+		draw(x,y,r,rx,ry,situation);
+		if(d<0)
+		{
+			d=d+4*x+6;
+		}
+		else{
+			d=d+4*(x-y)+10;
+			y=y-1;
+		}
+		x=x+1;
+	}
+	if(x==y)
+		draw(x,y,r,rx,ry,situation);
+
+void draw(int x,int y,int r,int rx,int ry,int situation){
+	//画八分之一圆弧,分为八种情况
+	switch(situation){
+		case 1:
+			glVertex2f(x+rx,y+ry);
+			break;
+		case 2:
+			glVertex2f(y+rx,x+ry);
+			break;
+		case 3:
+			glVertex2f(y+rx,-x+ry);
+			break;
+		case 4:
+			glVertex2f(x+rx,-y+ry);
+			break;
+		case 5:
+			glVertex2f(-x+rx,-y+ry);
+			break;
+		case 6:
+			glVertex2f(-y+rx,-x+ry);
+			break;
+		case 7:
+			glVertex2f(-y+rx,x+ry);
+			break;
+		case 8:
+			glVertex2f(-x+rx,y+ry);
+			break;
+	}
+}

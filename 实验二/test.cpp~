@@ -1,0 +1,15 @@
+//第三方库： sudo apt-get install freeglut3-dev
+//           其中，用到了glut.h文件
+//编译命令：g++ test.cpp -o test -lglut -lGL -lGLU
+#include <GL/glut.h>
+#include <iostream>
+#include <stdio.h>
+using namespace std;
+
+
+
+int main(int argc, char *argv[]){
+	GLubyte color[3]={255,0,0};
+	printf("%d \n",color[0]);
+	return 0;
+}

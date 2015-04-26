@@ -1,0 +1,99 @@
+//第三方库： sudo apt-get install freeglut3-dev
+//           其中，用到了glut.h文件
+//编译命令：g++ menu.cpp -o menu -lglut -lGL -lGLU
+#include <GL/glut.h>
+#include <stack>
+#include <iostream>
+using namespace std;
+void menu(int value){
+	switch(value){
+		case 2:{
+			//缩小,三个坐标表示x,y,z缩小倍数
+			glScalef(0.5,0.5,0.5); 
+			glutPostRedisplay();
+			break;
+		}
+		case 3:{
+			//放大,三个坐标表示x,y,z放大倍数
+			glScalef(2.0,2.0,2.0); 
+			glutPostRedisplay();
+			break;
+		}
+		case 4:{
+			//旋转
+			glRotatef(30,0.0,0.0,1.0); 
+			glutPostRedisplay();
+			break;
+		}
+		case 5:{
+			glTranslatef(0.0,10.0,0.0); 
+			glutPostRedisplay();
+			break;
+		}
+		case 6:{
+			glTranslatef(0.0,-10.0,0.0); 
+			glutPostRedisplay();
+			break;
+		}
+		case 7:{
+			glTranslatef(-10.0,0.0,0.0); 
+			glutPostRedisplay();
+			break;
+		}
+		case 8:{
+			glTranslatef(10.0,0.0,0.0); 
+			glutPostRedisplay();
+			break;
+		}
+		
+	}
+}
+
+void disPlay(void){
+	glClear(GL_COLOR_BUFFER_BIT);  
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); //不填充多边形内部颜色,只填充内部边框颜色
+	glColor3f(255.0f,0.0f, 0.0f);
+	glPointSize(1.0f);
+	glBegin(GL_POLYGON);  
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glVertex2f(0.0f,0.0f);
+	glVertex2f(200.0f,0.0f);
+	glVertex2f(200.0f,200.0f);
+	glVertex2f(0.0f,200.0f);
+	glEnd();
+	glFlush();
+	
+}
+
+int main(int argc, char *argv[]){
+	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_RGB | GLUT_SINGLE);
+	glutInitWindowPosition(0, 0);
+	glutInitWindowSize(800, 600);
+	glutCreateWindow("第一个OpenGL程序");
+
+	/* glOrtho2D(x1,y1,x2,y2)
+	建立二维坐标系:(x1,y1)*/
+	gluOrtho2D(-400,400,-300,300);
+	glutDisplayFunc(&disPlay);
+	//二级菜单
+	int secondId = glutCreateMenu(menu);
+	glutAddMenuEntry("up",5);
+	glutAddMenuEntry("down",6);
+	glutAddMenuEntry("left",7);
+	glutAddMenuEntry("right",8);
+	
+	//创建一级菜单
+	int id = glutCreateMenu(menu);
+	//创建菜单入口x
+	
+	glutAddMenuEntry("suoxiao",2);
+	glutAddMenuEntry("fangda",3);
+	glutAddMenuEntry("xuanzhuan",4);
+	//加入一级菜单
+	glutAddSubMenu("pingyi",secondId);
+	 //绑定鼠标右键
+	 glutAttachMenu(GLUT_RIGHT_BUTTON);
+	 glutMainLoop();
+	 return 0;
+}
